@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import random
-from datasets.data_io import read_cam_file, read_image, read_map, read_pair_file
+from .data_io import read_cam_file, read_image, read_map, read_pair_file
 from torch.utils.data import Dataset
 from typing import List, Tuple
 

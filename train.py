@@ -10,9 +10,9 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from typing import List, Tuple
 
-from datasets.mvs import MVSDataset
-from models import PatchmatchNet, patchmatchnet_loss
-from utils import *
+from .datasets.mvs import MVSDataset
+from .models import PatchmatchNet, patchmatchnet_loss
+from .utils import *
 
 
 # main training function

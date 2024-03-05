@@ -1,7 +1,9 @@
 import argparse
+import itertools
 import os
 import shutil
 import struct
+from contextlib import nullcontext
 from multiprocessing import Pool
 from typing import Dict, List, NamedTuple, Tuple
 
@@ -247,7 +249,7 @@ def quaternion_to_rotation_matrix(qvec: List[float]) -> np.ndarray:
          1 - 2 * qvec[1] ** 2 - 2 * qvec[2] ** 2]])
 
 
-if __name__ == "__main__":
+def colmap_input_parser():
     parser = argparse.ArgumentParser(description="Convert colmap results into input for PatchmatchNet")
 
     parser.add_argument("--input_folder", type=str, help="Project input dir.")
@@ -259,8 +261,10 @@ if __name__ == "__main__":
     parser.add_argument("--convert_format", action="store_true", default=False,
                         help="If set, convert image to jpg format.")
 
-    args = parser.parse_args()
+    return parser
 
+
+def main(args):
     if not args.output_folder:
         args.output_folder = args.input_folder
 
@@ -335,7 +339,6 @@ if __name__ == "__main__":
         depth_ranges.append((depth_min, depth_max))
     print("depth_ranges[0]\n", depth_ranges[0], end="\n\n")
 
-
     def calc_score(ind1: int, ind2: int) -> float:
         id_i = images[ind1].point3d_ids
         id_j = images[ind2].point3d_ids
@@ -354,7 +357,6 @@ if __name__ == "__main__":
                     2 * (args.sigma1 if theta <= args.theta0 else args.sigma2) ** 2))
         return view_score_
 
-
     # view selection
     score = np.zeros((num_images, num_images))
     queue: List[Tuple[int, int]] = []
@@ -362,7 +364,8 @@ if __name__ == "__main__":
         for j in range(i + 1, num_images):
             queue.append((i, j))
 
-    with Pool() as p:
+    parallel = False
+    with Pool() if parallel else nullcontext(itertools) as p:
         for (i, j), s in zip(queue, p.starmap(calc_score, queue)):
             score[i, j] = s
             score[j, i] = s
@@ -408,3 +411,7 @@ if __name__ == "__main__":
         else:
             shutil.copyfile(os.path.join(image_dir, images[i].name),
                             os.path.join(renamed_dir, "%08d.jpg" % i))
+
+
+if __name__ == "__main__":
+    main(colmap_input_parser().parse_args())

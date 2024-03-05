@@ -1,20 +1,21 @@
 import argparse
-import cv2
-import numpy as np
 import os
 import sys
 import time
+from typing import Tuple
+
+import cv2
+import numpy as np
 import torch.backends.cudnn
 import torch.nn as nn
 import torch.nn.parallel
 from plyfile import PlyData, PlyElement
-from typing import Tuple
 from torch.utils.data import DataLoader
 
-from datasets.data_io import read_cam_file, read_image, read_map, read_pair_file, save_image, save_map
-from datasets.mvs import MVSDataset
-from models.net import PatchmatchNet
-from utils import print_args, tensor2numpy, to_cuda
+from .datasets.data_io import read_cam_file, read_image, read_map, read_pair_file, save_image, save_map
+from .datasets.mvs import MVSDataset
+from .models.net import PatchmatchNet
+from .utils import print_args, tensor2numpy, to_cuda
 
 
 def save_depth(args):
@@ -84,12 +85,12 @@ def save_depth(args):
 
 # project the reference point cloud into the source view, then project back
 def reproject_with_depth(
-    depth_ref: np.ndarray,
-    intrinsics_ref: np.ndarray,
-    extrinsics_ref: np.ndarray,
-    depth_src: np.ndarray,
-    intrinsics_src: np.ndarray,
-    extrinsics_src: np.ndarray
+        depth_ref: np.ndarray,
+        intrinsics_ref: np.ndarray,
+        extrinsics_ref: np.ndarray,
+        depth_src: np.ndarray,
+        intrinsics_src: np.ndarray,
+        extrinsics_src: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Project the reference points to the source view, then project back to calculate the reprojection error
 
@@ -297,9 +298,7 @@ def filter_depth(args, scan: str = ""):
     print("saving the final model to", ply_filename)
 
 
-if __name__ == "__main__":
-    torch.backends.cudnn.benchmark = True
-
+def eval_parser():
     parser = argparse.ArgumentParser(description="Predict depth, filter, and fuse")
 
     # High level input/output options
@@ -345,9 +344,10 @@ if __name__ == "__main__":
     parser.add_argument("--geo_mask_thres", type=int, default=5, help="threshold for geometric consistency filtering")
     parser.add_argument("--photo_thres", type=float, default=0.5,
                         help="threshold for photometric consistency filtering")
+    return parser
 
-    # parse arguments and check
-    input_args = parser.parse_args()
+
+def main(input_args):
     print("argv: ", sys.argv[1:])
     print_args(input_args)
 
@@ -381,3 +381,9 @@ if __name__ == "__main__":
 
         for input_scan in scans:
             filter_depth(input_args, input_scan)
+
+
+if __name__ == "__main__":
+    torch.backends.cudnn.benchmark = True
+    # parse arguments and check
+    main(eval_parser().parse_args())
