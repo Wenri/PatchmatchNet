@@ -1,10 +1,12 @@
 import argparse
-import cv2
-import numpy as np
 import os
 import shutil
 import struct
+from multiprocessing import Pool
 from typing import Dict, List, NamedTuple, Tuple
+
+import cv2
+import numpy as np
 
 
 # ============================ read_model.py ============================#
@@ -333,6 +335,7 @@ if __name__ == "__main__":
         depth_ranges.append((depth_min, depth_max))
     print("depth_ranges[0]\n", depth_ranges[0], end="\n\n")
 
+
     def calc_score(ind1: int, ind2: int) -> float:
         id_i = images[ind1].point3d_ids
         id_j = images[ind2].point3d_ids
@@ -351,6 +354,7 @@ if __name__ == "__main__":
                     2 * (args.sigma1 if theta <= args.theta0 else args.sigma2) ** 2))
         return view_score_
 
+
     # view selection
     score = np.zeros((num_images, num_images))
     queue: List[Tuple[int, int]] = []
@@ -358,10 +362,10 @@ if __name__ == "__main__":
         for j in range(i + 1, num_images):
             queue.append((i, j))
 
-    for i, j in queue:
-        s = calc_score(i, j)
-        score[i, j] = s
-        score[j, i] = s
+    with Pool() as p:
+        for (i, j), s in zip(queue, p.starmap(calc_score, queue)):
+            score[i, j] = s
+            score[j, i] = s
 
     if args.num_src_images < 0:
         args.num_src_images = num_images
